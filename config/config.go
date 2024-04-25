@@ -5,6 +5,7 @@ package config //import "github.com/getsops/sops/v3/config"
 
 import (
 	"fmt"
+	"github.com/getsops/sops/v3/aliyunkms"
 	"os"
 	"path"
 	"path/filepath"
@@ -94,12 +95,13 @@ type configFile struct {
 }
 
 type keyGroup struct {
-	KMS     []kmsKey
-	GCPKMS  []gcpKmsKey  `yaml:"gcp_kms"`
-	AzureKV []azureKVKey `yaml:"azure_keyvault"`
-	Vault   []string     `yaml:"hc_vault"`
-	Age     []string     `yaml:"age"`
-	PGP     []string
+	KMS       []kmsKey
+	AliyunKMS []aliyunKmsKey `yaml:"aliyun_kms"`
+	GCPKMS    []gcpKmsKey    `yaml:"gcp_kms"`
+	AzureKV   []azureKVKey   `yaml:"azure_keyvault"`
+	Vault     []string       `yaml:"hc_vault"`
+	Age       []string       `yaml:"age"`
+	PGP       []string
 }
 
 type gcpKmsKey struct {
@@ -111,6 +113,11 @@ type kmsKey struct {
 	Role       string             `yaml:"role,omitempty"`
 	Context    map[string]*string `yaml:"context"`
 	AwsProfile string             `yaml:"aws_profile"`
+}
+
+type aliyunKmsKey struct {
+	Arn     string             `yaml:"arn"`
+	Context map[string]*string `yaml:"context"`
 }
 
 type azureKVKey struct {
@@ -137,6 +144,7 @@ type creationRule struct {
 	PathRegex         string `yaml:"path_regex"`
 	KMS               string
 	AwsProfile        string `yaml:"aws_profile"`
+	AliyunKMS         string `yaml:"aliyun_kms"`
 	Age               string `yaml:"age"`
 	PGP               string
 	GCPKMS            string     `yaml:"gcp_kms"`
@@ -200,6 +208,9 @@ func getKeyGroupsFromCreationRule(cRule *creationRule, kmsEncryptionContext map[
 			for _, k := range group.KMS {
 				keyGroup = append(keyGroup, kms.NewMasterKeyWithProfile(k.Arn, k.Role, k.Context, k.AwsProfile))
 			}
+			for _, k := range group.AliyunKMS {
+				keyGroup = append(keyGroup, aliyunkms.NewMasterKey(k.Arn, k.Context))
+			}
 			for _, k := range group.GCPKMS {
 				keyGroup = append(keyGroup, gcpkms.NewMasterKeyFromResourceID(k.ResourceID))
 			}
@@ -231,6 +242,9 @@ func getKeyGroupsFromCreationRule(cRule *creationRule, kmsEncryptionContext map[
 			keyGroup = append(keyGroup, k)
 		}
 		for _, k := range kms.MasterKeysFromArnString(cRule.KMS, kmsEncryptionContext, cRule.AwsProfile) {
+			keyGroup = append(keyGroup, k)
+		}
+		for _, k := range aliyunkms.MasterKeysFromArnString(cRule.AliyunKMS, kmsEncryptionContext) {
 			keyGroup = append(keyGroup, k)
 		}
 		for _, k := range gcpkms.MasterKeysFromResourceIDString(cRule.GCPKMS) {

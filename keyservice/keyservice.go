@@ -6,6 +6,7 @@ package keyservice
 
 import (
 	"fmt"
+	"github.com/getsops/sops/v3/aliyunkms"
 
 	"github.com/getsops/sops/v3/age"
 	"github.com/getsops/sops/v3/azkv"
@@ -57,6 +58,19 @@ func KeyFromMasterKey(mk keys.MasterKey) Key {
 					Role:       mk.Role,
 					Context:    ctx,
 					AwsProfile: mk.AwsProfile,
+				},
+			},
+		}
+	case *aliyunkms.MasterKey:
+		ctx := make(map[string]string)
+		for k, v := range mk.EncryptionContext {
+			ctx[k] = *v
+		}
+		return Key{
+			KeyType: &Key_AliyunKmsKey{
+				AliyunKmsKey: &AliyunKmsKey{
+					Arn:     mk.Arn,
+					Context: ctx,
 				},
 			},
 		}

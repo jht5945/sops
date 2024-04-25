@@ -2,6 +2,7 @@ package keyservice
 
 import (
 	"fmt"
+	"github.com/getsops/sops/v3/aliyunkms"
 
 	"github.com/getsops/sops/v3/age"
 	"github.com/getsops/sops/v3/azkv"
@@ -36,6 +37,15 @@ func (ks *Server) encryptWithKms(key *KmsKey, plaintext []byte) ([]byte, error) 
 		return nil, err
 	}
 	return []byte(kmsKey.EncryptedKey), nil
+}
+
+func (ks *Server) encryptWithAliyunKms(key *AliyunKmsKey, plaintext []byte) ([]byte, error) {
+	aliyunKmsKey := aliyunKmsKeyToMasterKey(key)
+	err := aliyunKmsKey.Encrypt(plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(aliyunKmsKey.EncryptedKey), nil
 }
 
 func (ks *Server) encryptWithGcpKms(key *GcpKmsKey, plaintext []byte) ([]byte, error) {
@@ -101,6 +111,13 @@ func (ks *Server) decryptWithKms(key *KmsKey, ciphertext []byte) ([]byte, error)
 	return []byte(plaintext), err
 }
 
+func (ks *Server) decryptWithAliyunKms(key *AliyunKmsKey, ciphertext []byte) ([]byte, error) {
+	aliyunKmsKey := aliyunKmsKeyToMasterKey(key)
+	aliyunKmsKey.EncryptedKey = string(ciphertext)
+	plaintext, err := aliyunKmsKey.Decrypt()
+	return []byte(plaintext), err
+}
+
 func (ks *Server) decryptWithGcpKms(key *GcpKmsKey, ciphertext []byte) ([]byte, error) {
 	gcpKmsKey := gcpkms.MasterKey{
 		ResourceID: key.ResourceId,
@@ -158,6 +175,14 @@ func (ks Server) Encrypt(ctx context.Context,
 		}
 	case *Key_KmsKey:
 		ciphertext, err := ks.encryptWithKms(k.KmsKey, req.Plaintext)
+		if err != nil {
+			return nil, err
+		}
+		response = &EncryptResponse{
+			Ciphertext: ciphertext,
+		}
+	case *Key_AliyunKmsKey:
+		ciphertext, err := ks.encryptWithAliyunKms(k.AliyunKmsKey, req.Plaintext)
 		if err != nil {
 			return nil, err
 		}
@@ -266,6 +291,14 @@ func (ks Server) Decrypt(ctx context.Context,
 		response = &DecryptResponse{
 			Plaintext: plaintext,
 		}
+	case *Key_AliyunKmsKey:
+		plaintext, err := ks.decryptWithAliyunKms(k.AliyunKmsKey, req.Ciphertext)
+		if err != nil {
+			return nil, err
+		}
+		response = &DecryptResponse{
+			Plaintext: plaintext,
+		}
 	case *Key_GcpKmsKey:
 		plaintext, err := ks.decryptWithGcpKms(k.GcpKmsKey, req.Ciphertext)
 		if err != nil {
@@ -323,5 +356,17 @@ func kmsKeyToMasterKey(key *KmsKey) kms.MasterKey {
 		Role:              key.Role,
 		EncryptionContext: ctx,
 		AwsProfile:        key.AwsProfile,
+	}
+}
+
+func aliyunKmsKeyToMasterKey(key *AliyunKmsKey) aliyunkms.MasterKey {
+	ctx := make(map[string]*string)
+	for k, v := range key.Context {
+		value := v
+		ctx[k] = &value
+	}
+	return aliyunkms.MasterKey{
+		Arn:               key.Arn,
+		EncryptionContext: ctx,
 	}
 }

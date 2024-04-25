@@ -35,6 +35,15 @@ origin-build: test vet generate install functional-tests-all
 install:
 	$(GO) install github.com/getsops/sops/v3/cmd/sops
 
+.PHONY: build-all
+build-all:
+	env GOOS=linux GOARCH=arm64 $(GO) build -o sops-linux-arm64 github.com/getsops/sops/v3/cmd/sops
+	env GOOS=linux GOARCH=amd64 $(GO) build -o sops-linux-amd64 github.com/getsops/sops/v3/cmd/sops
+	env GOOS=windows GOARCH=arm64 $(GO) build -o sops-windows-arm64 github.com/getsops/sops/v3/cmd/sops
+	env GOOS=windows GOARCH=amd64 $(GO) build -o sops-windows-amd64 github.com/getsops/sops/v3/cmd/sops
+	env GOOS=darwin GOARCH=arm64 $(GO) build -o sops-darwin-arm64 github.com/getsops/sops/v3/cmd/sops
+	env GOOS=darwin GOARCH=amd64 $(GO) build -o sops-darwin-amd64 github.com/getsops/sops/v3/cmd/sops
+
 .PHONY: staticcheck
 staticcheck: install-staticcheck
 	$(STATICCHECK) ./...

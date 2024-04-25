@@ -24,6 +24,7 @@ func TestAIsNewerThanB(t *testing.T) {
 		{"v1.0.0", "v1.0.0", false},
 		{"v0.9.0", "v1.0.0", false},
 		{"1.0.0", "1.0.0-alpha", true},
+		{"3.8.1", "3.8.1-alibaba-cloud-kms-r1", true},
 		{"0.9.0", "1.0.0", true}, // Special case, 1.x is always considered newer.
 	}
 
