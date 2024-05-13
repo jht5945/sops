@@ -44,6 +44,24 @@ $ export ALIBABA_CLOUD_ACCESS_KEY_SECRET=P5****************************
 $ sops encrypt --aliyun-kms acs:kms:cn-hangzhou:1012345678901234:key/054a65da-0000-0000-0000-2b1ee3e071cf --encryption-context App:App1,Env:Prod a.json
 ```
 
+#### STS
+
+```shell
+$ export ALIBABA_CLOUD_ACCESS_KEY_ID=STS.*************************
+$ export ALIBABA_CLOUD_ACCESS_KEY_SECRET=B1****************************
+$ export ALIBABA_CLOUD_SECURITY_TOKEN=CA****************************
+$ sops encrypt --aliyun-kms acs:kms:cn-hangzhou:1012345678901234:key/054a65da-0000-0000-0000-2b1ee3e071cf --encryption-context App:App1,Env:Prod a.json
+```
+
+OR Legacy STS environment configuration
+
+```shell
+$ export ALICLOUD_ACCESS_KEY=STS.*************************
+$ export ALICLOUD_SECRET_KEY=B1****************************
+$ export ALICLOUD_SECURITY_TOKEN=CA****************************
+$ sops encrypt --aliyun-kms acs:kms:cn-hangzhou:1012345678901234:key/054a65da-0000-0000-0000-2b1ee3e071cf --encryption-context App:App1,Env:Prod a.json
+```
+
 #### Credentials file
 
 Use credentials file set ENV `ALIBABA_CLOUD_CREDENTIALS_FILE` or default file: `~/.alibabacloud/credentials`:

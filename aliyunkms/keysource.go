@@ -166,7 +166,14 @@ func (key *MasterKey) ToMap() map[string]interface{} {
 }
 
 func (key *MasterKey) createClient() (*kms20160120.Client, error) {
-	var credentialConfig *credentials.Config = nil
+	credentialConfig, err := key.buildCredentialConfig()
+	if err != nil {
+		return nil, err
+	}
+	return key.createClientWithConfig(credentialConfig)
+}
+
+func (key *MasterKey) buildCredentialConfig() (*credentials.Config, error) {
 	kmsSopsConfigFile, ok := os.LookupEnv(ENVKmsSopsConfigFile)
 	if ok {
 		// if ALIBABA_CLOUD_KMS_SOPS_CONFIG_FILE is configured in ENV, load config file
@@ -182,12 +189,17 @@ func (key *MasterKey) createClient() (*kms20160120.Client, error) {
 			log.WithField("arn", key.Arn).Info("parse kms sops config file: %s, error: %s", kmsSopsConfigFile, unmarshalErr.Error())
 			return nil, unmarshalErr
 		}
+		return &tempCredentialConfig, nil
+	}
+	envStsConfig, _ := providerEnvSts.resolve()
+	if envStsConfig != nil {
+		return envStsConfig, nil
 	}
 	// if ALIBABA_CLOUD_KMS_SOPS_CONFIG_FILE is NOT configured in ENV:
 	// lookup credential provider by default chain:
 	// []Provider{providerEnv, providerOIDC, providerProfile, providerInstance}
 	// Reference: https://github.com/aliyun/credentials-go#credential-provider-chain
-	return key.createClientWithConfig(credentialConfig)
+	return nil, nil
 }
 
 func (key *MasterKey) createClientWithConfig(credentialConfig *credentials.Config) (*kms20160120.Client, error) {

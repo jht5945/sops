@@ -12,7 +12,7 @@ import (
 )
 
 // Version represents the value of the current semantic version.
-var Version = "3.8.1-alibaba-cloud-kms-r1"
+var Version = "3.8.1-alibaba-cloud-kms-r3"
 
 // PrintVersion prints the current version of sops. If the flag
 // `--disable-version-check` is set, the function will not attempt
